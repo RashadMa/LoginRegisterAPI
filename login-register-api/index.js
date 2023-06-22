@@ -1,24 +1,33 @@
-// const express = require("express");
-// const app = express();
-// const { db } = require("./config/db");
-// db.connect();
-// app.use(express.json());
-// const userRoutes = require("./routes/userRoutes");
-// app.use("/api/users", userRoutes);
-// app.listen(8080);
-
-const express = require('express');
+const express = require("express");
 const app = express();
-const { db } = require('./config/db');
-const { userRoutes } = require('./routes/userRoutes');
-db.connect()
-app.use(express.json())
-app.use('/api', userRoutes)
+const fileUpload = require("express-fileupload");
+const { db } = require("./config/db");
+const { userRoutes } = require("./routes/userRoutes");
+const { uploadRoutes } = require("./routes/uploadRoutes");
+const { v4: uuidv4 } = require("uuid");
+app.use(express.urlencoded({ extended: true }));
+app.use("/images", express.static(path.join(__dirname, "images")));
+app.use(fileUpload());
 
-app.get('/',(req,res) => {
-    res.send('OK')
-})
+app.post("/api/upload", (req, res) => {
+  let extName = path.extname(req.files.profileImg.name);
+  if (extName == ".jpeg" || extName == ".jpg" || extName == ".png") {
+    req.files.profileImg.mv(__dirname + "/images/" + uuidv4() + extName);
+    res.send("OK");
+  } else {
+    res.status(500).send("Ext error");
+  }
+});
+
+app.use('/api/upload', uploadRoutes)
+db.connect();
+app.use(express.json());
+app.use("/api", userRoutes);
+
+app.get("/", (req, res) => {
+  res.send("OK");
+});
 
 app.listen(8080, () => {
-    console.log('Server is running...');
-})
+  console.log("Server is running...");
+});
